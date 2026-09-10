@@ -1,0 +1,11 @@
+{
+  "name": "internal-tools-framework-decision",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=24" },
+  "scripts": {
+    "skills:sync": "node scripts/sync-skills.mjs --write",
+    "skills:check": "node scripts/sync-skills.mjs --check",
+    "check": "npm run skills:check && node scripts/check-docs.mjs"
+  }
+}

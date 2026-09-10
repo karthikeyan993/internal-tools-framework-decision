@@ -1,0 +1,25 @@
+{
+  "name": "fastify-admin-comparison",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=24" },
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "dev": "npm run build -w @comparison/contracts && npm run build -w @comparison/web && npm run db:generate && concurrently -n api,web -c blue,green \"npm run dev -w @comparison/fastify-api\" \"npm run dev -w @comparison/web\"",
+    "build": "npm run build -w @comparison/contracts && npm run build -w @comparison/web && npm run build -w @comparison/fastify-api",
+    "typecheck": "npm run build -w @comparison/contracts && npm run typecheck -w @comparison/web && npm run typecheck -w @comparison/fastify-api",
+    "lint": "eslint .",
+    "test": "npm run test -w @comparison/fastify-api",
+    "check": "npm run lint && npm run typecheck && npm run test && npm run build",
+    "db:generate": "npm run db:generate -w @comparison/fastify-api",
+    "db:migrate": "npm run db:migrate -w @comparison/fastify-api",
+    "db:seed": "npm run db:seed -w @comparison/fastify-api"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.0",
+    "concurrently": "^10.0.5",
+    "eslint": "^10.10.0",
+    "typescript": "^6.0.2",
+    "typescript-eslint": "^8.70.0"
+  }
+}

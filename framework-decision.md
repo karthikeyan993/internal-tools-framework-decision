@@ -1,12 +1,14 @@
 # Framework decision for internal tools
 
-**Date:** 9 September 2026  
-**Decision:** React + Vite for the frontend; Fastify with TypeScript for the backend.  
+**Date:** 9 September 2026
+**Recommendation:** React + Vite for a CSR frontend; Fastify with TypeScript as the preferred backend. NestJS remains an alternative; final adoption is proposed in ADR 0001.
 **Scope:** Our initial admin panel and similar internal business tools.
 
 ## What we considered
 
-We are a four-person team: two interns and two experienced developers. Everyone knows Python, with basic JavaScript knowledge. We expect fewer than 10,000 users and will use AI agents throughout development.
+The original team context is four people: two interns and two experienced developers, with Python experience and basic JavaScript knowledge. The clarified scope is TypeScript-only, fully AI-driven development for company-only tools, primarily on GCP Cloud Run and Cloud Run functions, with IAP for authentication. Expected user count is fewer than 10,000.
+
+See the [Fastify](docs/blueprints/fastify.md) and [NestJS](docs/blueprints/nestjs.md) starter designs, [shared architecture](docs/architecture.md), and [proposed ADR](docs/adr/0001-typescript-cloud-run-starter.md). These are designs, not a runnable or production-validated application.
 
 Our priorities are understandable code, consistent implementation, straightforward maintenance, and one primary application language. User count alone does not establish capacity requirements: concurrent activity, database queries, and workload still need to be measured.
 
@@ -26,7 +28,7 @@ React is a UI library, Vite is a build tool, and Fastify is the backend framewor
 
 1. **One primary application language.** TypeScript across frontend and backend reduces language switching and lets us standardize tooling and share suitable API types. Shared types must be deliberately maintained; runtime input validation remains necessary.
 2. **An explicit request flow.** The UI calls an API, and the API performs validation, permissions checks, business logic, and database operations. We expect this separation to make debugging and reviewing generated code easier for this team.
-3. **A relatively small backend learning surface.** We can start with routes, functions, schemas, and plugins without adopting NestJS's dependency-injection architecture.
+3. **A direct structure for inspection.** Routes, functions, schemas, and plugins can keep the request flow explicit. With AI generating code, reduced typing and boilerplate are not major decision drivers; the team still needs to understand and debug the result.
 4. **Useful API foundations.** Fastify supports TypeScript and schema-based request validation and response serialization. These provide a foundation for consistent API contracts. [TypeScript support](https://fastify.dev/docs/latest/Reference/TypeScript/), [validation and serialization](https://fastify.dev/docs/latest/Reference/Validation-and-Serialization/)
 5. **A reusable team starter.** A reviewed example and agreed conventions can give developers and AI agents a consistent pattern across similar tools.
 
@@ -36,18 +38,17 @@ These are suitability judgments for our current team and application, not claims
 
 | Option | Why we considered it | Why we are not selecting it now | When to reconsider |
 | --- | --- | --- | --- |
-| **React + Vite + FastAPI** | Strong fit with our existing Python knowledge; validation and automatic API documentation | We are choosing TypeScript as the shared frontend/backend language. FastAPI would introduce a Python backend toolchain and a cross-language API contract | Python libraries or existing services become central, or the team's TS learning cost outweighs standardization benefits |
-| **React + Vite + NestJS** | Built-in architectural conventions and dependency injection can improve consistency | Modules, decorators, providers, and dependency injection add concepts to learn before our first admin panel. We prefer a smaller starting structure | Growing backend complexity makes framework-enforced conventions more valuable |
+| **React + Vite + NestJS** | Built-in architectural conventions and dependency injection can improve consistency across generated features | We prefer a direct structure with a maintained starter; Nest's framework concepts remain a debugging cost even when agents write the code | Complex business modules or multiple teams make prescribed conventions more valuable |
 | **React + Vite + Hono** | Small routing API, TypeScript support, and portability across JavaScript runtimes | Also meets our single-language goal, but we prefer Fastify's integrated schema validation, response serialization, and structured logging for our Node.js API. Runtime portability is not currently a requirement | We need Cloudflare Workers or multiple runtimes, or a prototype shows Hono is easier for the team to maintain |
-| **Next.js** | Integrated React framework with server capabilities and routing | Its App Router introduces Server/Client Component boundaries and rendering behavior. Our initial interactive admin tool does not establish a strong need for that additional model | We need server-rendered pages, public-facing content, or a team experienced with Next.js |
+| **Next.js** | Integrated React framework with server capabilities and routing | SSR is not currently a firm requirement; its rendering and caching model adds concepts to manage | React SSR becomes mandatory; then evaluate Next.js and React Router Framework Mode |
 
-FastAPI provides validation and OpenAPI-based documentation using Python types. NestJS adds an architectural layer over Express or Fastify. Next.js supports server-rendered UI composed with interactive Client Components. [FastAPI features](https://fastapi.tiangolo.com/features/), [NestJS introduction](https://docs.nestjs.com/), [Next.js rendering model](https://nextjs.org/docs/app/getting-started/server-and-client-components)
+NestJS adds an architectural layer over Express or Fastify. Next.js supports server-rendered UI composed with interactive Client Components. [NestJS introduction](https://docs.nestjs.com/), [Next.js rendering model](https://nextjs.org/docs/app/getting-started/server-and-client-components)
 
-**FastAPI is our strongest alternative.** The decision accepts an upfront TypeScript learning cost to pursue longer-term language consistency. We are not rejecting Python because of scale or security.
+**NestJS is the main structured-backend alternative.** Python frameworks are outside the current shortlist. No evidence here establishes that a particular framework generates better AI-written code; our preference assumes a maintained starter and meaningful verification.
 
 ### Hono versus Fastify
 
-Hono is a credible TS backend alternative, including for ordinary Node.js deployments through its adapter. Its use of Web Standards also supports runtimes such as Cloudflare Workers, Bun, and Deno. [Hono overview](https://hono.dev/docs/), [Node.js support](https://hono.dev/docs/getting-started/nodejs)
+Hono is a credible TS backend alternative, including for ordinary Node.js deployments through its adapter. Its use of Web Standards also supports runtimes such as Cloudflare Workers, Bun, and Deno. Its typed RPC client is useful even without runtime portability requirements. [Hono overview](https://hono.dev/docs/), [Node.js support](https://hono.dev/docs/getting-started/nodejs), [Hono RPC](https://hono.dev/docs/guides/rpc)
 
 The distinction is how we assemble API behavior. Hono provides a thin validator and recommends integrating a validation library; Fastify provides a schema-based validation and serialization path, plus integrated Pino logging when enabled. For this project, we prefer that combination as our starting convention. Both still need application structure and permissions designed by the team. [Hono validation](https://hono.dev/docs/guides/validation), [Fastify validation](https://fastify.dev/docs/latest/Reference/Validation-and-Serialization/), [Fastify logging](https://fastify.dev/docs/latest/Reference/Logging/)
 
@@ -66,4 +67,4 @@ Build one complete admin workflow first: list records, edit a record, validate i
 
 Give agents the approved structure and example in repository instructions. Require strict TypeScript checks, a production build, and meaningful tests for permissions and business rules. A developer must understand and review each change; AI-generated code is not evidence that the change is correct.
 
-Use this as our default for similar internal applications. Revisit the decision if team experience, workload, or application requirements materially change.
+Propose this as the default for similar internal applications, subject to the ADR and first-workflow validation. Revisit the decision if team experience, workload, or application requirements materially change. A monorepo supports either backend; begin with one deployment per website and split only where access, ownership, or releases require it.
